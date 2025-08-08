@@ -5,13 +5,7 @@ from pprint import pp
 import evdev
 from evdev import ecodes
 
-from config import BTN_MAPPING, ABS_HAT_MAPPING
-
-DEVICE_ID = 22
-
-
-
-#lrzbxazzyxabr
+from config import BTN_MAPPING, ABS_HAT_MAPPING, DEVICE_ID
 
 class Mapper:
     def __init__(self):
@@ -25,7 +19,8 @@ class Mapper:
             mapped_events = self.abs_mapping[btn_code][value]
         else:
             mapped_events = []
-        print(f"sending {mapped_events} to uinput")
+        if mapped_events:
+            print(f"sending {mapped_events} to uinput")
         if isinstance(mapped_events, int):
             mapped_events = [mapped_events]
         for event in mapped_events:
@@ -35,26 +30,6 @@ class Mapper:
         self.ui.syn()
     def close(self):
         self.ui.close()
-
-def get_cap(device: evdev.InputDevice):
-    def get_shortest_btn (s):
-        name = None
-        if isinstance(s,str):
-            name = s
-        elif isinstance(s, tuple):
-            name = sorted(s, key=lambda x: len(x))[0]
-        return name
-    caps = device.capabilities(verbose=True)
-    
-    btn_keys = list(caps.keys())[1]
-    for name, button_id in caps[btn_keys]:
-        name = get_shortest_btn(name)
-        print(name, button_id)
-def print_devices():
-    devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
-    for device in devices:
-        print(device.path, device.name, device.phys)
-
 
 async def main():   
     input_device_path = Path("/dev/input") / f'event{DEVICE_ID:d}'
@@ -70,7 +45,6 @@ async def main():
                 print(evdev.categorize(event), event.value)
                 mapper.send_keystroke(event.code, event.value)
     except FileNotFoundError as e:
-        print_devices()
         print(f"Device {DEVICE_ID} not found")
     finally:
         mapper.close()

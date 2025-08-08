@@ -1,5 +1,7 @@
 from evdev import ecodes
 
+DEVICE_ID = 22
+
 BTN_MAPPING = {
     ecodes.BTN_X: ecodes.KEY_X, 
     ecodes.BTN_A: ecodes.KEY_A,
