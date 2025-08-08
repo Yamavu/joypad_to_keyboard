@@ -1,5 +1,5 @@
 [project]
-name = "krita-sf30"
+name = "joypad_to_keyboard"
 version = "0.1.0"
 description = "Python script to capture controller input and send keystrokes, like programs Antimicro or Input Remapper"
 readme = "README.md"
