@@ -5,7 +5,7 @@ from pprint import pp
 import evdev
 from evdev import ecodes
 
-from config import BTN_MAPPING, ABS_HAT_MAPPING, DEVICE_ID
+from config.sn30 import BTN_MAPPING, ABS_HAT_MAPPING, DEVICE_ID
 
 
 class Mapper:
@@ -43,13 +43,17 @@ async def main():
         async for event in input_device.async_read_loop():
             event: evdev.InputEvent = event
             if event.type == ecodes.EV_KEY and event.value == 1:
-                print(evdev.categorize(event), event.value)
+                print(evdev.categorize(event), repr(event))
                 mapper.send_keystroke(event.code)
             elif event.type == ecodes.EV_ABS:
-                print(evdev.categorize(event), event.value)
+                print(evdev.categorize(event), repr(event))
                 mapper.send_keystroke(event.code, event.value)
     except FileNotFoundError as e:
         print(f"Device {DEVICE_ID} not found")
+        devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
+        for device in devices:
+            print(device.path, device.name, device.phys)
+        
     finally:
         mapper.close()
 

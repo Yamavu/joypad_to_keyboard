@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+config/config.py
+joypad_to_keyboard.egg-info/PKG-INFO
+joypad_to_keyboard.egg-info/SOURCES.txt
+joypad_to_keyboard.egg-info/dependency_links.txt
+joypad_to_keyboard.egg-info/requires.txt
+joypad_to_keyboard.egg-info/top_level.txt
