@@ -1,30 +1,81 @@
 import asyncio
+from typing import Set, Dict, Sequence
 from pathlib import Path
 from pprint import pp
 
 import evdev
 from evdev import ecodes
 
-from config.sn30 import BTN_MAPPING, ABS_HAT_MAPPING, DEVICE_ID
+from config.sn30 import BTN_MAPPING, ABS_HAT_MAPPING, DEVICE_ID, DEVICE_NAME
 
 
+def map_value_to_name(value: int | Sequence[int]) -> str:
+    """
+    Maps an integer evdev event code or a sequence of codes to their symbolic names.
+    """
+    if isinstance(value, int):
+        value = [value] # Ensure it's always a list for consistent processing
+
+    mapped_names = []
+    for code in value:
+        # Iterate through all ecodes.items() to find the name corresponding to the code
+        found_name = None
+        for name, code_value in ecodes.ecodes.items():
+            if not (name.startswith("KEY") or name.startswith("BTN")):
+                continue
+            if code == code_value :
+                found_name = name
+                break # Found the name, exit inner loop
+        if found_name:
+            mapped_names.append(found_name)
+        else:
+            mapped_names.append(f"UNKNOWN_CODE({code})") # Handle unknown codes
+
+    return "+".join(mapped_names)
+
+
+def collect_target_events():
+
+    mapped_events: Set[int] = set()
+    def collect(e_list):
+        mapped_events = set()
+        if isinstance(e_list, int):
+            e_list = [e_list]
+        for e in e_list:
+            mapped_events.add(e)
+        return mapped_events
+    for e_list in BTN_MAPPING.values():
+        mapped_events.union(collect(e_list))
+    for e_list_list in ABS_HAT_MAPPING.values():
+        for e_list in e_list_list.values():
+            mapped_events.union(collect(e_list))
+    return list(mapped_events)
 class Mapper:
     def __init__(self):
+        events: Dict[int,Sequence[int]] = {
+            ecodes.EV_KEY: collect_target_events()
+        }
+        self.ui = evdev.UInput(
+            events=events,
+            name='virtual-keyboard',
+            vendor=0x1234,  # Example vendor ID
+            product=0x5678, # Example product ID
+            version=0x0001)
         self.ui = evdev.UInput()
         self.btn_mapping = BTN_MAPPING
         self.abs_mapping = ABS_HAT_MAPPING
 
     def send_keystroke(self, btn_code, value=None):
         if btn_code in self.btn_mapping:
-            mapped_events = self.btn_mapping[btn_code]
+            mapped_events: int | Sequence[int] = self.btn_mapping[btn_code]
         elif btn_code in self.abs_mapping and value in self.abs_mapping[btn_code]:
-            mapped_events = self.abs_mapping[btn_code][value]
+            mapped_events: int | Sequence[int] = self.abs_mapping[btn_code][value]
         else:
             mapped_events = []
-        if mapped_events:
-            print(f"sending {mapped_events} to uinput")
         if isinstance(mapped_events, int):
             mapped_events = [mapped_events]
+        if mapped_events:
+            print(f"sending {map_value_to_name(mapped_events)} to uinput")
         for event in mapped_events:
             self.ui.write(ecodes.EV_KEY, event, 1)  # KEY_A down
         for event in reversed(mapped_events):
@@ -38,23 +89,30 @@ class Mapper:
 async def main():
     input_device_path = Path("/dev/input") / f"event{DEVICE_ID:d}"
     mapper = Mapper()
+    input_device = None
     try:
         input_device = evdev.InputDevice(input_device_path)
+        input_device.grab()
+        assert input_device.name == DEVICE_NAME
+        print(f"Recieving events from {input_device.name}")
         async for event in input_device.async_read_loop():
             event: evdev.InputEvent = event
             if event.type == ecodes.EV_KEY and event.value == 1:
-                print(evdev.categorize(event), repr(event))
+                #print(evdev.categorize(event), repr(event))
                 mapper.send_keystroke(event.code)
             elif event.type == ecodes.EV_ABS:
-                print(evdev.categorize(event), repr(event))
+                #print(evdev.categorize(event), repr(event))
                 mapper.send_keystroke(event.code, event.value)
-    except FileNotFoundError as e:
+    except Exception:
         print(f"Device {DEVICE_ID} not found")
         devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
         for device in devices:
             print(device.path, device.name, device.phys)
-        
+    except KeyboardInterrupt:
+        pass
     finally:
+        if input_device is not None:
+            input_device.ungrab()
         mapper.close()
 
 

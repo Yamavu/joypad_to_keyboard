@@ -8,6 +8,8 @@ single dependancy: [python-evdev](https://github.com/gvalkov/python-evdev)
 ## Permissions
 the tools above want superuser rights just to access uinput
 
+Actually they just need access to raw input devices. If target app rund in flatpak container it also needs `override --device=all` or `override --device=input`
+
 ### /etc/udev/rules.d/99-uinput.rules
 ```
 echo "SUBSYSTEM==\"misc\", KERNEL==\"uinput\", GROUP=\"uinput\", MODE=\"0660\"" \
