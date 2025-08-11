@@ -1,2 +1,4 @@
 [Shortcuts]
+rotate_canvas_left=Ctrl+Shift+K
+rotate_canvas_right=Ctrl+Shift+L
 krita_filter_desaturate=none
