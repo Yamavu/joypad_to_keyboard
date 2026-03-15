@@ -3,7 +3,7 @@ import time
 from typing import Optional
 
 import evdev
-from evdev import ecodes
+from evdev import ecodes as e
 
 from mapper import Mapper
 from config.sn30 import (
@@ -14,6 +14,13 @@ from config.sn30 import (
     VENDOR_ID,
     PRODUCT_ID,
 )
+
+VIRTUAL_DEVICE = {
+    "name": "joypad2keyboard",
+    "vendor": 0x04A8,  # Example vendor ID
+    "product": 0x0002,  # Example product ID
+    "version": 0x0001,
+}
 
 
 def print_devices():
@@ -54,17 +61,9 @@ def wait_for_device(product_id, vendor_id, name) -> evdev.InputDevice:
 def main():
     try:
         input_device = wait_for_device(PRODUCT_ID, VENDOR_ID, DEVICE_NAME)
-        output_device = evdev.UInput(
-            events={
-                ecodes.EV_KEY: Mapper.collect_target_events(
-                    BTN_MAPPING, ABS_HAT_MAPPING
-                )
-            },
-            name="virtual-keyboard",
-            vendor=0x04A8,  # Example vendor ID
-            product=0x0002,  # Example product ID
-            version=0x0001,
-        )
+        key_events = Mapper.collect_target_events(BTN_MAPPING, ABS_HAT_MAPPING)
+        print(key_events)
+        output_device = evdev.UInput(events={e.EV_KEY: key_events}, **VIRTUAL_DEVICE)
         mapper = Mapper(output_device, BTN_MAPPING, ABS_HAT_MAPPING, INITIAL_HAT_VALUE)
         mapper.map_input(input_device)
     except PermissionError:

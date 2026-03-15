@@ -1,7 +1,7 @@
 from typing import Sequence, List, Set
 
 import evdev
-from evdev import ecodes
+from evdev.ecodes import EV_ABS, EV_KEY, ecodes
 
 MAX_LEN = 5  # maximum number of concurrent key events for a single button press
 KEY_DOWN_VALUE = 1
@@ -40,10 +40,10 @@ class Mapper:
             return _mapped_events
 
         for e_list in btn_mapping.values():
-            mapped_events.union(collect(e_list))
+            mapped_events = mapped_events.union(collect(e_list))
         for e_list_list in abs_hat_mapping.values():
             for e_list in e_list_list.values():
-                mapped_events.union(collect(e_list))
+                mapped_events=mapped_events.union(collect(e_list))
         return list(mapped_events)
 
     @staticmethod
@@ -56,9 +56,9 @@ class Mapper:
 
         mapped_names = []
         for code in value:
-            # Iterate through all ecodes.items() to find the name corresponding to the code
+            # Iterate through all items() to find the name corresponding to the code
             found_name = None
-            for name, code_value in ecodes.ecodes.items():
+            for name, code_value in ecodes.items():
                 if not name.startswith("KEY") and not name.startswith("BTN"):
                     continue
                 if code == code_value:
@@ -97,25 +97,25 @@ class Mapper:
         assert len(mapped_events) < MAX_LEN, (
             f"as a safety check len(mapped_events) < {MAX_LEN}"
         )
-        if active:
-            for event in mapped_events:
-                self.output_device.write(ecodes.EV_KEY, event, KEY_DOWN_VALUE)  # key down
-                self.output_device.syn()
-        else:
-            for event in reversed(mapped_events):
-                self.output_device.write(ecodes.EV_KEY, event, KEY_UP_VALUE)  # key up
-                self.output_device.syn()
-        #self.output_device.syn()
-
+        
+        _mapped_events = mapped_events
+        value = KEY_DOWN_VALUE
+        if not active:
+            value = KEY_UP_VALUE
+            _mapped_events = reversed(mapped_events)
+        for event in _mapped_events:
+            self.output_device.write(EV_KEY, event, KEY_DOWN_VALUE)  # key down
+            self.output_device.syn()
+        
     def map_input(self, input_device: evdev.InputDevice):
         assert self.output_device.fd != -1, "Device is closed already."
         try:
             with input_device.grab_context():
                 for event in input_device.read_loop():
-                    if event.type == ecodes.EV_KEY:
+                    if event.type == EV_KEY:
                         key_pressed = event.value == KEY_DOWN_VALUE
                         self.send_keystroke(event.code, event.value, active=key_pressed)
-                    elif event.type == ecodes.EV_ABS:
+                    elif event.type == EV_ABS:
                         # EV_ABS don't release, they just send different coordinates
                         self.send_keystroke(event.code, event.value, active=True)
         except Exception as e:
