@@ -6,6 +6,7 @@ Requires-Python: >=3.13
 Description-Content-Type: text/markdown
 Requires-Dist: evdev>=1.9.2
 
+# Joypad to Keypad
 
 Python script to capture controller input and send keystrokes
 
@@ -15,6 +16,8 @@ single dependancy: [python-evdev](https://github.com/gvalkov/python-evdev)
 
 ## Permissions
 the tools above want superuser rights just to access uinput
+
+Actually they just need access to raw input devices. If target app rund in flatpak container it also needs `override --device=all` or `override --device=input`
 
 ### /etc/udev/rules.d/99-uinput.rules
 ```

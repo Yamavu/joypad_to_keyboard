@@ -1,6 +1,10 @@
 from evdev import ecodes
 from typing import Dict, List
 
+"""
+This is a mapping for the 8bitdo SFC30 / SN30 Gamepad
+"""
+
 DEVICE_ID = 20
 DEVICE_NAME = "8Bitdo SFC30 GamePad"
 VENDOR_ID = 11720
@@ -17,7 +21,7 @@ BTN_MAPPING: Dict[int, int|List[int]] = {
     ecodes.BTN_START: ecodes.KEY_LEFTALT,
 }
 
-INVALID_HAT_VALUE: int = -1
+INITIAL_HAT_VALUE: int = -1
 ABS_HAT_MAPPING: Dict[int, Dict[int,int|List[int]]] = {
     ecodes.ABS_X: {
         0: [ecodes.KEY_LEFTCTRL],

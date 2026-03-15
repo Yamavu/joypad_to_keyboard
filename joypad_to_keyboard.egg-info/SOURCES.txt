@@ -1,5 +1,6 @@
 README.md
 pyproject.toml
+config/KEYBOARD_MAP.py
 config/sn30.py
 config/sn30pro.py
 joypad_to_keyboard.egg-info/PKG-INFO
